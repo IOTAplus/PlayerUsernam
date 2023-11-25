@@ -12,7 +12,6 @@ contract PlayerUsername {
     mapping(address => address) private userAddresses;
 
     mapping(string => uint256) private namesById;
-    mapping(uint256 => string) private names;
     mapping(string => bool) private flag;
 
     uint256 private totalPlayers;
@@ -38,42 +37,39 @@ contract PlayerUsername {
     }
 
     function setUsername(string memory _username) external {
+        // Check that msg.sender can not have more than one username
+        if (userAddresses[msg.sender] != address(0)) revert("already have one.");
+        // Check if the username is taken (global)
+        if (flag[_username]) revert("username already taken.");
         // Check if the username is valid
         if (!isValidUsername(_username)) revert("invalid username.");
 
-        // Check if the username is taken (global)
-        if (flag[_username]) revert("Username already taken.");
+        namesById[_username] = totalPlayers;
+        usernames[msg.sender] = _username;
+        userAddresses[msg.sender] = msg.sender;
+        usernameToAddress[_username] = msg.sender;
+        flag[_username] = true;
 
-        if (userAddresses[msg.sender] == address(0)) {
-            names[totalPlayers] = _username;
-            namesById[_username] = totalPlayers;
-            usernames[msg.sender] = _username;
-            userAddresses[msg.sender] = msg.sender;
-            usernameToAddress[_username] = msg.sender;
-            flag[_username] = true;
-
-            totalPlayers++;
-            emit UsernameSet(msg.sender, _username);
-        } else revert("Use changeUsername()");
+        totalPlayers++;
+        emit UsernameSet(msg.sender, _username);
     }
 
     function changeUsername(string memory _oldUserName, string memory _newUsername) external {
         if (keccak256(bytes(_oldUserName)) == keccak256(bytes(_newUsername))) revert("same username.");
         if (!isValidUsername(_newUsername)) revert("invalid username.");
         if (usernameToAddress[_oldUserName] != msg.sender) revert("owner dont match.");
+        if (flag[_newUsername]) revert("username already taken.");
 
-        uint256 id = namesById[_newUsername];
+        uint256 id = namesById[_oldUserName];
 
-        names[id] = _newUsername;
+        namesById[_newUsername] = id;
         usernames[msg.sender] = _newUsername;
 
         delete flag[_oldUserName];
         flag[_newUsername] = true;
 
         delete usernameToAddress[_oldUserName];
-        
         usernameToAddress[_newUsername] = msg.sender;
-        namesById[_newUsername] = id;
 
 	    emit UsernameSet(msg.sender, _newUsername);
     }
