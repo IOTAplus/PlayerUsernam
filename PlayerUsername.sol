@@ -11,7 +11,10 @@ contract PlayerUsername {
     // Mapping to keep track of addresses that have set a username
     mapping(address => address) private userAddresses;
 
+    // Mapping of the username associated with the player id
     mapping(string => uint256) private namesById;
+
+    // Mapping to set a flag in for all usernames
     mapping(string => bool) private flag;
 
     uint256 private totalPlayers;
@@ -39,10 +42,10 @@ contract PlayerUsername {
     function setUsername(string memory _username) external {
         // Check that msg.sender can not have more than one username
         if (userAddresses[msg.sender] != address(0)) revert("already have one.");
-        // Check if the username is taken (global)
-        if (flag[_username]) revert("username already taken.");
         // Check if the username is valid
         if (!isValidUsername(_username)) revert("invalid username.");
+        // Check if the username is taken
+        if (flag[_username]) revert("username already taken.");
 
         namesById[_username] = totalPlayers;
         usernames[msg.sender] = _username;
@@ -55,10 +58,14 @@ contract PlayerUsername {
     }
 
     function changeUsername(string memory _oldUserName, string memory _newUsername) external {
-        if (keccak256(bytes(_oldUserName)) == keccak256(bytes(_newUsername))) revert("same username.");
-        if (!isValidUsername(_newUsername)) revert("invalid username.");
-        if (usernameToAddress[_oldUserName] != msg.sender) revert("owner dont match.");
+        // Check if new username is taken
         if (flag[_newUsername]) revert("username already taken.");
+        // Check if both same usernames
+        if (keccak256(bytes(_oldUserName)) == keccak256(bytes(_newUsername))) revert("same username.");
+        // Check if the username is valid
+        if (!isValidUsername(_newUsername)) revert("invalid username.");
+        // Check if the owner of old username is the same that new username
+        if (usernameToAddress[_oldUserName] != msg.sender) revert("owner dont match.");
 
         uint256 id = namesById[_oldUserName];
 
@@ -71,9 +78,10 @@ contract PlayerUsername {
         delete usernameToAddress[_oldUserName];
         usernameToAddress[_newUsername] = msg.sender;
 
-	    emit UsernameSet(msg.sender, _newUsername);
+        emit UsernameSet(msg.sender, _newUsername);
     }
 
+    // View function to get the username associated with address
     function getUsername(address _user) external view returns (string memory) {
         return usernames[_user];
     }
