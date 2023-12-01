@@ -60,8 +60,6 @@ contract PlayerUsername {
     function changeUsername(string memory _oldUserName, string memory _newUsername) external {
         // Check if new username is taken
         if (flag[_newUsername]) revert("username already taken.");
-        // Check if both same usernames
-        if (keccak256(bytes(_oldUserName)) == keccak256(bytes(_newUsername))) revert("same username.");
         // Check if the username is valid
         if (!isValidUsername(_newUsername)) revert("invalid username.");
         // Check if the owner of old username is the same that new username
